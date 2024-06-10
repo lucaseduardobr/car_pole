@@ -12,8 +12,45 @@ import pickle
 
 LR = 1e-3
 #env = gym.make("CartPole-v1", render_mode="human")
-env = gym.make("CartPole-v1")
-env.reset()
+# env = gym.make("CartPole-v1")
+# env.reset()
+
+
+from gym.envs.classic_control import CartPoleEnv , utils
+from gym.utils import seeding
+
+
+class CustomCartPoleEnv(CartPoleEnv):
+    def reset(self, *, seed=None, options=None):
+        super().reset(seed=seed)
+        
+        if options is not None:
+            low = options.get('low', [-0.05, -0.05, -0.05, -0.05])
+            high = options.get('high', [0.05, 0.05, 0.05, 0.05])
+        else:
+            low, high = [-0.05, -0.05, -0.05, -0.05], [0.05, 0.05, 0.05, 0.05]
+        
+        self.state = self.np_random.uniform(low=low, high=high, size=(4,))
+        self.steps_beyond_terminated = None
+
+        if self.render_mode == "human":
+            self.render()
+        return np.array(self.state, dtype=np.float32), {}
+
+# Uso do ambiente customizado
+env = CustomCartPoleEnv()
+options = {
+    'low': [-2, -1, -0.2, -2],
+    'high': [2, 1, 0.2, 2]
+}
+env.reset(options=options)  # Limites customizados para cada estado
+
+
+
+
+
+
+
 
 
 
@@ -22,14 +59,14 @@ env.reset()
 
 goal_steps = 5000
 score_requirement = 100
-initial_games = 100000
+initial_games = 150000
 
 # Suprimir avisos de DeprecationWarning
 #warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def some_random_games_first():
     for episode in range(5):
-        env.reset()
+        env.reset(options=options)
         for t in range(200):
          
             action = env.action_space.sample()
@@ -73,7 +110,7 @@ def initial_population():
                     output = [1, 0]
                 training_data.append([data[0], output])
                 
-        env.reset()
+        env.reset(options=options)
         scores.append(score)
         
     with open('train_data.pkl', 'wb') as file:
@@ -129,49 +166,20 @@ model = train_model(training_data)
 
 
 
-# import gym
-# from gym.envs.classic_control import CartPoleEnv , utils
-# from gym.utils import seeding
-
-
-# class CustomCartPoleEnv(CartPoleEnv):
-#     def reset(self, *, seed=None, options=None):
-#         super().reset(seed=seed)
-        
-#         if options is not None:
-#             low = options.get('low', [-0.05, -0.05, -0.05, -0.05])
-#             high = options.get('high', [0.05, 0.05, 0.05, 0.05])
-#         else:
-#             low, high = [-0.05, -0.05, -0.05, -0.05], [0.05, 0.05, 0.05, 0.05]
-        
-#         self.state = self.np_random.uniform(low=low, high=high, size=(4,))
-#         self.steps_beyond_terminated = None
-
-#         if self.render_mode == "human":
-#             self.render()
-#         return np.array(self.state, dtype=np.float32), {}
-
-# # Uso do ambiente customizado
-# env = CustomCartPoleEnv(render_mode="human")
-# options = {
-#     'low': [-2, -1, -0.2, -2],
-#     'high': [2, 1, 0.2, 2]
-# }
-# obs, info = env.reset(options=options)  # Limites customizados para cada estado
-
-
-
 
 
 # Carregar o modelo
-#model = tf.keras.models.load_model('deucerto.keras')
+#model = tf.keras.models.load_model('best_Results.keras')
 
-
-#working jsut fine up to here
 
 env.close()
-env = gym.make("CartPole-v1", render_mode="human")
-env.reset()
+env = CustomCartPoleEnv(render_mode="human")
+env.reset(options=options) 
+
+
+
+
+
 
 
 scores = []
@@ -180,7 +188,7 @@ for each_game in range(5):
     score = 0
     game_memory = []
     prev_obs = []
-    env.reset()
+    env.reset(options=options)
     
     for _ in range(goal_steps):
         
